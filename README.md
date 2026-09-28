@@ -16,50 +16,60 @@ migration, and the route `/api/health`.
 | A stranger cannot create the first admin | `/admin` on a fresh deployment shows a **login** screen, not "Create your first user" |
 | Local work uses a development database, not the live one | `dbEndpoint` in `/api/health` differs between `npm run dev` and the live site |
 
-## Deploy it (F1, in this order)
+## Deploy it (F1 and F2, in this order)
 
 You need a GitHub account and a Vercel account (Hobby, free). The database and the image store are
 created from inside Vercel.
 
 1. On GitHub, **Use this template** → *Create a new repository* in your own account (private is fine).
-2. On Vercel, **Add New… → Project**, import that repository. **Do not deploy yet.**
-3. Under *Environment Variables*, add **before the first deploy**:
-   - `PAYLOAD_SECRET`: a long random text (for example from a password manager);
+   Tick **Include all branches**: the branch `add-field` is needed in step 11.
+2. On Vercel, **Add New… → Project**, import that repository.
+3. On the import screen, under *Environment Variables*, add **before the first deploy**:
+   - `PAYLOAD_SECRET`: a random text of **at least 32 characters** (for example from a password manager);
    - `FIRST_ADMIN_EMAIL` and `FIRST_ADMIN_PASSWORD`: your admin login.
+
+   Vercel then deploys straight away, and that first build **fails** with
+   `NOT CONFIGURED YET: there is no database`. That is expected: carry on with steps 4 and 5.
 4. **Storage → Marketplace → Neon (Postgres)**: create a free database and connect it to
    *Production, Preview and Development*. This adds `DATABASE_URL`. **[F1-a]** the consent screen
    and whose account it is; **[F1-b]** the free-plan limits shown.
 5. **Storage → Blob**: create a store and connect it. This adds `BLOB_READ_WRITE_TOKEN`.
    **[F1-c]** the environment variable *names* (never the values).
-6. **Deploy.** **[F1-d]** the build log with `MIGRATIONS: ran` and the build time.
+6. **Redeploy** (Deployments → the latest → Redeploy). **[F1-d]** the build log with `MIGRATIONS: ran`
+   and the build time.
 7. Open `https://<your-site>/api/health`. **[F1-e]** `"db": "ok"`, `"blob": "ok"` and the migration name.
-8. Log in at `/admin`, add a note with an image, open the home page. **[F1-f]** the note with its image.
-9. In a private window, open `/admin`. **[F2-a]** a login screen, not "Create your first user".
+
+   **Do not open `/admin` yet**: step 8 must be the first visit.
+8. In a private window, open `/admin`. **[F2-a]** a login screen, not "Create your first user".
+9. Log in at `/admin`, add a note with an image, open the home page. **[F1-f]** the note with its image.
 
 ## Previews and migrations (F3)
 
 10. **[F3-a]** Make a second project in the same Neon account (for example a second copy of this site).
 11. In GitHub, open a pull request from the branch **`add-field`** (it adds a *summary* field to notes,
     with its migration). Open the preview's build log in Vercel. **[F3-b]** `MIGRATIONS: skipped (preview)`,
-    and in Neon the list of branches.
+    and in Neon the list of branches. **[F3-e]** the preview's home page: it shows an error about the
+    missing `summary` column, because previews do not migrate. That is expected evidence, not a fault.
 12. Before merging, open the **live** `/api/health`. **[F3-c]** only the first migration is listed.
 13. Merge the pull request. When the production build is done: **[F3-d]** its log shows
     `MIGRATIONS: ran`, and the live `/api/health` lists the new migration too.
 
 ## Work on your own computer (H)
 
-Node **22** (see `.nvmrc`). No local Postgres: your database is a Neon **development branch**.
+Node **22** (see `.nvmrc`). No local Postgres: the database comes from Vercel.
 
 ```bash
 npm install
 npm i -g vercel          # once
 vercel link              # choose your project
 vercel env pull .env     # writes .env with the Development values; never commit it
-npm run migrate          # brings your development branch up to date
 npm run dev              # http://localhost:3000
 ```
 
-Compare `dbEndpoint` at `http://localhost:3000/api/health` with the live `/api/health`: they must differ.
+**Before anything else**, compare `dbEndpoint` at `http://localhost:3000/api/health` with the live
+`/api/health`. They must differ. **If they are the same, your computer is using the live database.**
+Stop, do not run `npm run migrate`, and record it (the protocol's part H says what to do next).
+Only when they differ: `npm run migrate` brings your development database up to date.
 
 **Without installing anything:** open the repository in **GitHub Codespaces** (*Code → Codespaces*).
 The container has Node 22 and the Vercel CLI; run the same commands from `vercel link` on.
@@ -72,4 +82,12 @@ After changing a collection in `src/collections/`, create its migration and comm
 npm run migrate:create -- my-change
 ```
 
-`npm run build` runs the migrations only when `VERCEL_ENV=production`.
+`npm run build` runs the migrations only when `VERCEL_ENV=production`, over Neon's direct connection
+(`DATABASE_URL_UNPOOLED`) when Vercel provides it.
+
+## Safety notes
+
+- The site refuses to start when no admin exists and `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` are
+  not set, so the "create the first user" screen is never open to strangers.
+- `/api/health` shows the database endpoint id (never a password or address). It exists for the
+  account test only; the course starter does not expose it.

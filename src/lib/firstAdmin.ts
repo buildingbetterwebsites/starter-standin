@@ -4,27 +4,35 @@ import type { Payload } from 'payload'
  * A fresh Payload site lets the first visitor to /admin create the admin account. This closes that door:
  * on start, if no user exists yet, it creates one from FIRST_ADMIN_EMAIL and FIRST_ADMIN_PASSWORD, which
  * the set-up guide asks you to add in Vercel BEFORE the first deployment.
+ *
+ * It fails CLOSED: with no user and no such variables, the site refuses to start rather than leave the
+ * "create the first user" screen open to anyone.
  */
 export async function createFirstAdmin(payload: Payload): Promise<void> {
-  const email = process.env.FIRST_ADMIN_EMAIL
-  const password = process.env.FIRST_ADMIN_PASSWORD
-
   let existing: number
   try {
     existing = (await payload.count({ collection: 'users', overrideAccess: true })).totalDocs
   } catch {
-    // No tables yet (the migrations have not run): nothing to do now.
+    // No tables yet (the migrations have not run, e.g. during `payload migrate:create`): nothing to do now.
     return
   }
   if (existing > 0) return
 
+  const email = process.env.FIRST_ADMIN_EMAIL
+  const password = process.env.FIRST_ADMIN_PASSWORD
   if (!email || !password) {
-    payload.logger.warn(
-      'No user exists and FIRST_ADMIN_EMAIL / FIRST_ADMIN_PASSWORD are not set: add them in Vercel and redeploy.',
+    throw new Error(
+      'No admin user exists and FIRST_ADMIN_EMAIL / FIRST_ADMIN_PASSWORD are not set. ' +
+        'Add both in Vercel (Settings → Environment Variables) and redeploy.',
     )
-    return
   }
 
-  await payload.create({ collection: 'users', data: { email, password }, overrideAccess: true })
-  payload.logger.info(`First admin created: ${email}`)
+  try {
+    await payload.create({ collection: 'users', data: { email, password }, overrideAccess: true })
+    payload.logger.info(`First admin created: ${email}`)
+  } catch (error) {
+    // Two instances starting at the same moment: the other one created it first. Fine, if it now exists.
+    const now = (await payload.count({ collection: 'users', overrideAccess: true })).totalDocs
+    if (now === 0) throw error
+  }
 }

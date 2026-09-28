@@ -234,6 +234,19 @@
           "primaryKey": false,
           "notNull": true
         },
+        "prefix": {
+          "name": "prefix",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "''"
+        },
+        "_objectkey": {
+          "name": "_objectkey",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp(3) with time zone",
@@ -1103,6 +1116,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "27ae36f6-aff9-4b4c-a8e3-dd38271bd674",
+  "id": "81d02552-6d5e-4611-987e-7c479ab828ed",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

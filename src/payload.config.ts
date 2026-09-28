@@ -41,6 +41,10 @@ export default buildConfig({
       enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
       collections: { media: true },
       token: process.env.BLOB_READ_WRITE_TOKEN || '',
+      // The same database columns with or without a store, so migrations match locally, in CI and on Vercel.
+      alwaysInsertFields: true,
+      // Images go from the browser straight to Blob: Vercel functions refuse request bodies over 4.5 MB.
+      clientUploads: true,
     }),
   ],
   onInit: createFirstAdmin,
