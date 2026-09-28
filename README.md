@@ -79,6 +79,10 @@ or Neon accounts).
 
 ### H2 · Vercel's Development variables (evidence only)
 
+The Vercel command line keeps **one** signed-in identity per computer. Before `vercel link`, run
+`vercel whoami`; if it is not the account that owns this project, `vercel logout`, then `vercel login`
+in the right browser profile, and check `vercel whoami` again.
+
 ```bash
 npm install
 npm i -g vercel          # once
