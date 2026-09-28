@@ -56,7 +56,28 @@ created from inside Vercel.
 
 ## Work on your own computer (H)
 
-Node **22** (see `.nvmrc`). No local Postgres: the database comes from Vercel.
+Node **22** (see `.nvmrc`). No local Postgres. There are two paths; test **H1** first, because it is
+the one the course starter will use (it also works for a teammate who cannot reach the owner's Vercel
+or Neon accounts).
+
+### H1 · A free Neon database of your own (the starter's path)
+
+1. In **your own** Neon account (neon.com, free), create a new project. Copy its connection string.
+2. Copy `.env.example` to `.env.local` and fill in: `DATABASE_URL` (the string from step 1),
+   `PAYLOAD_SECRET` (any 32+ characters), `FIRST_ADMIN_EMAIL` and `FIRST_ADMIN_PASSWORD`.
+3. Run:
+
+   ```bash
+   npm install
+   npm run migrate
+   npm run dev              # http://localhost:3000
+   ```
+
+4. `http://localhost:3000/api/health` shows `db: ok`, the migration, and a `dbEndpoint` that is **not**
+   the live site's. Log in at `/admin` with the admin from `.env.local`. Record the time the whole of H1
+   took.
+
+### H2 · Vercel's Development variables (evidence only)
 
 ```bash
 npm install
