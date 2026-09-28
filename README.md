@@ -23,6 +23,8 @@ created from inside Vercel.
 
 1. On GitHub, **Use this template** → *Create a new repository* in your own account (private is fine).
    Tick **Include all branches**: the branch `add-field` is needed in step 11.
+   The test lead must check the copied branches share history before F3: GitHub gave them separate
+   roots in the 28 September run. The lead repairs the test fixture before the pull-request step.
 2. On Vercel, **Add New… → Project**, import that repository.
 3. On the import screen, under *Environment Variables*, add **before the first deploy**:
    - `PAYLOAD_SECRET`: a random text of **at least 32 characters** (for example from a password manager);
@@ -31,8 +33,11 @@ created from inside Vercel.
    Vercel then deploys straight away, and that first build **fails** with
    `NOT CONFIGURED YET: there is no database`. That is expected: carry on with steps 4 and 5.
 4. **Storage → Marketplace → Neon (Postgres)**: create a free database and connect it to
-   *Production, Preview and Development*. This adds `DATABASE_URL`. **[F1-a]** the consent screen
-   and whose account it is; **[F1-b]** the free-plan limits shown.
+   *Production and Preview*. Leave **Custom Prefix** at its default `STORAGE`; the app accepts the
+   resulting `STORAGE_URL` automatically. For the account test, enable a separate database branch
+   for **Preview** when the connection screen offers it. Add Development separately for the H2 test;
+   it needs its own database branch. **[F1-a]** the consent screen and whose account it is;
+   **[F1-b]** the free-plan limits shown.
 5. **Storage → Blob**: create a store and connect it. This adds `BLOB_READ_WRITE_TOKEN`.
    **[F1-c]** the environment variable *names* (never the values).
 6. **Redeploy** (Deployments → the latest → Redeploy). **[F1-d]** the build log with `MIGRATIONS: ran`
@@ -79,45 +84,56 @@ or Neon accounts).
 
 ### H2 · Vercel's Development variables (evidence only)
 
-The Vercel command line keeps **one** signed-in identity per computer. Before `vercel link`, run
-`vercel whoami`; if it is not the account that owns this project, `vercel logout`, then `vercel login`
-in the right browser profile, and check `vercel whoami` again.
+F1 connected Production and Preview only. **Set up Development before pulling its variables or
+starting the app.** Use a fresh clone in another folder so H1's `.env.local` cannot override this test.
 
-```bash
-npm install
-npm i -g vercel          # once
-vercel link              # choose your project
-vercel env pull .env     # writes .env with the Development values; never commit it
-npm run dev              # http://localhost:3000
-```
-
-**Before anything else**, compare `dbEndpoint` at `http://localhost:3000/api/health` with the live
-`/api/health`. They must differ. **If they are the same, your computer is using the live database.**
-Stop the dev server, do not run `npm run migrate`, and give Development its own branch:
-
-1. In Neon's console: **Branches → New branch**, name `dev`, parent `main` (production).
+1. In Neon's console: **Branches → New branch**, name `dev`, parent `main` (production), or use the
+   separate `dev` branch if you already created it.
 2. Open the `dev` branch's **Connect** panel and copy two connection strings: the **pooled** one and the
    **direct** one (pooling off).
-3. Point Vercel's *Development* environment at them. This app reads only these two variables:
+3. In Vercel, **Settings → Environment Variables**, add these for **Development only**:
 
    | Variable | Value for Development |
    | --- | --- |
    | `DATABASE_URL` | the `dev` branch's **pooled** connection string |
    | `DATABASE_URL_UNPOOLED` | the `dev` branch's **direct** connection string |
+   | `PAYLOAD_SECRET` | a new random text of at least 32 characters |
 
-   *To verify in the test, record which of these works:* (a) in Vercel, **Settings → Environment
-   Variables**, edit both variables for **Development only**; or (b) if Vercel will not let you edit
-   variables that the Neon integration manages, reconnect Neon to the project with **Development
-   unticked**, then add both variables yourself, scoped to Development.
-4. The Neon integration also adds `PGHOST`, `PGHOST_UNPOOLED`, `PGUSER`, `PGDATABASE`, `PGPASSWORD`
-   and legacy `POSTGRES_*` variables. This app does not read them. If they still point at production
-   after step 3, delete those lines from your local `.env`, so no production password sits on your
-   computer.
-5. `vercel env pull .env` again, start `npm run dev`, and compare `dbEndpoint` once more. Only when it
-   differs from the live one: `npm run migrate` brings the `dev` branch up to date.
+   If Development already has integration-managed `STORAGE_URL` / `STORAGE_URL_UNPOOLED` (or
+   `DATABASE_URL` / `DATABASE_URL_UNPOOLED`), point that pair at `dev` instead. If Vercel prevents
+   editing them, reconnect Neon with Development unticked, then add the Development variables above.
+   Do not leave another alias pointing at production. Record whether adding, editing or reconnecting
+   worked. The `dev` branch copies the existing admin, so use that admin's login; no new first admin
+   is needed.
+
+The Vercel command line keeps **one** signed-in identity per computer. In the fresh clone, run:
+
+```bash
+npm install
+npm i -g vercel          # once
+vercel whoami            # must be the account that owns this project
+```
+
+If the identity is wrong, run `vercel logout`, then `vercel login` in the right browser profile,
+and check `vercel whoami` again. Then:
+
+```bash
+vercel link              # choose your project
+vercel env pull .env     # writes .env with the Development values; never commit it
+```
+
+**Before running dev or migrate**, privately compare the endpoint IDs (`ep-…`, ignoring `-pooler`)
+of **both** database URLs in `.env` with the live `/api/health`'s `dbEndpoint`. Both must belong to
+`dev` and differ from the live endpoint. If a URL is missing or points at production, fix the
+Development settings and pull again. Never share the connection strings or a screenshot of `.env`.
+If unused `PG*` or `POSTGRES_*` variables still hold production credentials, remove those lines from
+the local `.env`; this app does not read them.
+
+Once both endpoints are correct, run `npm run dev` and confirm the local `/api/health` reports the
+`dev` endpoint. Stop the server before running `npm run migrate` if migrations are needed.
 
 **Without installing anything:** open the repository in **GitHub Codespaces** (*Code → Codespaces*).
-The container has Node 22 and the Vercel CLI; run the same commands from `vercel link` on.
+The container has Node 22 and the Vercel CLI; follow the same Development setup and identity checks.
 
 ## Changing the model
 
@@ -128,7 +144,9 @@ npm run migrate:create -- my-change
 ```
 
 `npm run build` runs the migrations only when `VERCEL_ENV=production`, over Neon's direct connection
-(`DATABASE_URL_UNPOOLED`) when Vercel provides it.
+(`DATABASE_URL_UNPOOLED` or `STORAGE_URL_UNPOOLED`) when Vercel provides it. The default
+`STORAGE_URL` and the local `DATABASE_URL` are both accepted; if both are set to different
+connections, the app stops with a configuration error.
 
 ## Safety notes
 
