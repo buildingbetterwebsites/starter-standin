@@ -1,0 +1,10 @@
+{
+  "name": "Account test stand-in (Node 22)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "npm ci && npm i -g vercel",
+  "forwardPorts": [3000],
+  "portsAttributes": { "3000": { "label": "Site", "onAutoForward": "openPreview" } },
+  "customizations": {
+    "vscode": { "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"] }
+  }
+}
