@@ -68,8 +68,28 @@ npm run dev              # http://localhost:3000
 
 **Before anything else**, compare `dbEndpoint` at `http://localhost:3000/api/health` with the live
 `/api/health`. They must differ. **If they are the same, your computer is using the live database.**
-Stop, do not run `npm run migrate`, and record it (the protocol's part H says what to do next).
-Only when they differ: `npm run migrate` brings your development database up to date.
+Stop the dev server, do not run `npm run migrate`, and give Development its own branch:
+
+1. In Neon's console: **Branches → New branch**, name `dev`, parent `main` (production).
+2. Open the `dev` branch's **Connect** panel and copy two connection strings: the **pooled** one and the
+   **direct** one (pooling off).
+3. Point Vercel's *Development* environment at them. This app reads only these two variables:
+
+   | Variable | Value for Development |
+   | --- | --- |
+   | `DATABASE_URL` | the `dev` branch's **pooled** connection string |
+   | `DATABASE_URL_UNPOOLED` | the `dev` branch's **direct** connection string |
+
+   *To verify in the test, record which of these works:* (a) in Vercel, **Settings → Environment
+   Variables**, edit both variables for **Development only**; or (b) if Vercel will not let you edit
+   variables that the Neon integration manages, reconnect Neon to the project with **Development
+   unticked**, then add both variables yourself, scoped to Development.
+4. The Neon integration also adds `PGHOST`, `PGHOST_UNPOOLED`, `PGUSER`, `PGDATABASE`, `PGPASSWORD`
+   and legacy `POSTGRES_*` variables. This app does not read them. If they still point at production
+   after step 3, delete those lines from your local `.env`, so no production password sits on your
+   computer.
+5. `vercel env pull .env` again, start `npm run dev`, and compare `dbEndpoint` once more. Only when it
+   differs from the live one: `npm run migrate` brings the `dev` branch up to date.
 
 **Without installing anything:** open the repository in **GitHub Codespaces** (*Code → Codespaces*).
 The container has Node 22 and the Vercel CLI; run the same commands from `vercel link` on.
