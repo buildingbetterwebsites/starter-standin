@@ -28,6 +28,7 @@ export default async function HomePage() {
             return (
               <li key={note.id}>
                 <strong>{note.title}</strong>
+                {note.summary && <p>{note.summary}</p>}
                 {image?.url && (
                   // A plain img: the account test wants the Blob address itself, not an optimised copy.
                   // eslint-disable-next-line @next/next/no-img-element

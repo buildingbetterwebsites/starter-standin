@@ -152,6 +152,8 @@ export interface User {
 export interface Media {
   id: number;
   alt: string;
+  prefix?: string | null;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -171,6 +173,7 @@ export interface Media {
 export interface Note {
   id: number;
   title: string;
+  summary?: string | null;
   image?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
@@ -282,6 +285,8 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  prefix?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -300,6 +305,7 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface NotesSelect<T extends boolean = true> {
   title?: T;
+  summary?: T;
   image?: T;
   updatedAt?: T;
   createdAt?: T;

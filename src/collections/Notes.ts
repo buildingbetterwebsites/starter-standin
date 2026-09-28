@@ -16,6 +16,11 @@ export const Notes: CollectionConfig = {
       required: true,
     },
     {
+      // Added on the branch add-field, with its migration, for the account test's question on previews.
+      name: 'summary',
+      type: 'text',
+    },
+    {
       name: 'image',
       type: 'upload',
       relationTo: 'media',
