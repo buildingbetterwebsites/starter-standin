@@ -35,10 +35,19 @@ if (env === 'production' || env === 'preview') {
 if (env === 'production') {
   console.log('MIGRATIONS: running on the production database …')
   // Migrations use Neon's direct (unpooled) connection when Vercel provides one.
-  run('npx cross-env NODE_OPTIONS=--no-deprecation payload migrate', {
+  const migration = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/migrate.mjs'], {
+    encoding: 'utf8',
+    timeout: 120_000,
+    env: { ...process.env, NODE_OPTIONS: '--no-deprecation',
     DATABASE_URL: database.directUrl || database.pooledUrl,
     STORAGE_URL: database.directUrl || database.pooledUrl,
+    },
   })
+  process.stdout.write(migration.stdout || '')
+  process.stderr.write(migration.stderr || '')
+  if (migration.status !== 0 || !(migration.stdout || '').split(/\r?\n/).includes('MIGRATIONS: verified committed migrations')) {
+    stop('database migrations did not finish and verify. See the migration error above; do not treat this build as successful.')
+  }
   console.log('MIGRATIONS: ran')
 } else {
   console.log(`MIGRATIONS: skipped (${env === 'preview' ? 'preview' : `VERCEL_ENV=${env}`})`)

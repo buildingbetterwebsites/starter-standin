@@ -34,7 +34,7 @@ created from inside Vercel.
    `NOT CONFIGURED YET: there is no database`. That is expected: carry on with steps 4 and 5.
 4. **Storage → Marketplace → Neon (Postgres)**: create a free database and connect it to
    *Production and Preview*. Leave **Custom Prefix** at its default `STORAGE`; the app accepts the
-   resulting `STORAGE_URL` automatically. For the account test, enable a separate database branch
+   connection variables automatically (`DATABASE_URL` was observed in this run; `STORAGE_URL` is also supported). For the account test, enable a separate database branch
    for **Preview** when the connection screen offers it. Add Development separately for the H2 test;
    it needs its own database branch. **[F1-a]** the consent screen and whose account it is;
    **[F1-b]** the free-plan limits shown.
@@ -144,8 +144,8 @@ npm run migrate:create -- my-change
 ```
 
 `npm run build` runs the migrations only when `VERCEL_ENV=production`, over Neon's direct connection
-(`DATABASE_URL_UNPOOLED` or `STORAGE_URL_UNPOOLED`) when Vercel provides it. The default
-`STORAGE_URL` and the local `DATABASE_URL` are both accepted; if both are set to different
+(`DATABASE_URL_UNPOOLED` or `STORAGE_URL_UNPOOLED`) when Vercel provides it. Both integration names,
+`STORAGE_URL` and `DATABASE_URL`, are accepted; if both are set to different
 connections, the app stops with a configuration error.
 
 ## Safety notes
