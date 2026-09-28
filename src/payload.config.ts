@@ -10,6 +10,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Notes } from './collections/Notes'
 import { createFirstAdmin } from './lib/firstAdmin'
+import { databaseEnvironment } from './lib/databaseEnv.mjs'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -29,7 +30,7 @@ export default buildConfig({
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || '',
+      connectionString: databaseEnvironment(process.env).pooledUrl,
     },
     // The database changes only through committed migrations, locally too: no automatic "push".
     push: false,

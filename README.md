@@ -31,8 +31,11 @@ created from inside Vercel.
    Vercel then deploys straight away, and that first build **fails** with
    `NOT CONFIGURED YET: there is no database`. That is expected: carry on with steps 4 and 5.
 4. **Storage → Marketplace → Neon (Postgres)**: create a free database and connect it to
-   *Production, Preview and Development*. This adds `DATABASE_URL`. **[F1-a]** the consent screen
-   and whose account it is; **[F1-b]** the free-plan limits shown.
+   *Production and Preview*. Leave **Custom Prefix** at its default `STORAGE`; the app accepts the
+   resulting `STORAGE_URL` automatically. For the account test, enable a separate database branch
+   for **Preview** when the connection screen offers it. Add Development separately for the H2 test;
+   it needs its own database branch. **[F1-a]** the consent screen and whose account it is;
+   **[F1-b]** the free-plan limits shown.
 5. **Storage → Blob**: create a store and connect it. This adds `BLOB_READ_WRITE_TOKEN`.
    **[F1-c]** the environment variable *names* (never the values).
 6. **Redeploy** (Deployments → the latest → Redeploy). **[F1-d]** the build log with `MIGRATIONS: ran`
@@ -98,17 +101,18 @@ Stop the dev server, do not run `npm run migrate`, and give Development its own 
 1. In Neon's console: **Branches → New branch**, name `dev`, parent `main` (production).
 2. Open the `dev` branch's **Connect** panel and copy two connection strings: the **pooled** one and the
    **direct** one (pooling off).
-3. Point Vercel's *Development* environment at them. This app reads only these two variables:
+3. Point Vercel's *Development* environment at them. Use the names Vercel's Neon connection created:
 
    | Variable | Value for Development |
    | --- | --- |
-   | `DATABASE_URL` | the `dev` branch's **pooled** connection string |
-   | `DATABASE_URL_UNPOOLED` | the `dev` branch's **direct** connection string |
+   | `STORAGE_URL` (or `DATABASE_URL`) | the `dev` branch's **pooled** connection string |
+   | `STORAGE_URL_UNPOOLED` (or `DATABASE_URL_UNPOOLED`) | the `dev` branch's **direct** connection string |
 
    *To verify in the test, record which of these works:* (a) in Vercel, **Settings → Environment
    Variables**, edit both variables for **Development only**; or (b) if Vercel will not let you edit
    variables that the Neon integration manages, reconnect Neon to the project with **Development
-   unticked**, then add both variables yourself, scoped to Development.
+   unticked**, then add both variables yourself, scoped to Development. Do not leave the other
+   name pointing at production: the app refuses conflicting database URLs.
 4. The Neon integration also adds `PGHOST`, `PGHOST_UNPOOLED`, `PGUSER`, `PGDATABASE`, `PGPASSWORD`
    and legacy `POSTGRES_*` variables. This app does not read them. If they still point at production
    after step 3, delete those lines from your local `.env`, so no production password sits on your
@@ -128,7 +132,9 @@ npm run migrate:create -- my-change
 ```
 
 `npm run build` runs the migrations only when `VERCEL_ENV=production`, over Neon's direct connection
-(`DATABASE_URL_UNPOOLED`) when Vercel provides it.
+(`DATABASE_URL_UNPOOLED` or `STORAGE_URL_UNPOOLED`) when Vercel provides it. The default
+`STORAGE_URL` and the local `DATABASE_URL` are both accepted; if both are set to different
+connections, the app stops with a configuration error.
 
 ## Safety notes
 

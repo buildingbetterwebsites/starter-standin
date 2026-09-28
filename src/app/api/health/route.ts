@@ -2,6 +2,7 @@ import configPromise from '@payload-config'
 import { list } from '@vercel/blob'
 import { getPayload } from 'payload'
 import { sql } from '@payloadcms/db-postgres'
+import { databaseEnvironment } from '../../../lib/databaseEnv.mjs'
 
 // Evidence for the account test: which database and store this deployment uses, and which migrations
 // have run. It never returns a password, a token or the full database address.
@@ -10,11 +11,11 @@ export const dynamic = 'force-dynamic'
 /** Neon's endpoint id (`ep-…`) from the database host, so local and live can be compared without secrets. */
 function databaseEndpoint(): string {
   try {
-    const host = new URL(process.env.DATABASE_URL ?? '').hostname
+    const host = new URL(databaseEnvironment(process.env).pooledUrl).hostname
     const first = host.split('.')[0] ?? ''
-    return first.startsWith('ep-') ? first.replace(/-pooler$/, '') : `not Neon (${host || 'no DATABASE_URL'})`
+    return first.startsWith('ep-') ? first.replace(/-pooler$/, '') : `not Neon (${host || 'no database URL'})`
   } catch {
-    return 'unreadable DATABASE_URL'
+    return 'unreadable database URL'
   }
 }
 
