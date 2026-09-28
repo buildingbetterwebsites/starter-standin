@@ -12,9 +12,11 @@ export async function createFirstAdmin(payload: Payload): Promise<void> {
   let existing: number
   try {
     existing = (await payload.count({ collection: 'users', overrideAccess: true })).totalDocs
-  } catch {
-    // No tables yet (the migrations have not run, e.g. during `payload migrate:create`): nothing to do now.
-    return
+  } catch (error) {
+    // Only "the table does not exist yet" (Postgres 42P01: the migrations have not run, e.g. during
+    // `payload migrate:create`) is expected here. Anything else, such as a time-out, stops the start.
+    if (isMissingTable(error)) return
+    throw error
   }
   if (existing > 0) return
 
@@ -35,4 +37,11 @@ export async function createFirstAdmin(payload: Payload): Promise<void> {
     const now = (await payload.count({ collection: 'users', overrideAccess: true })).totalDocs
     if (now === 0) throw error
   }
+}
+
+function isMissingTable(error: unknown): boolean {
+  for (let e: unknown = error; e && typeof e === 'object'; e = (e as { cause?: unknown }).cause) {
+    if ((e as { code?: unknown }).code === '42P01') return true
+  }
+  return false
 }
